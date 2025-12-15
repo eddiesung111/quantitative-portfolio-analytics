@@ -32,7 +32,10 @@ def plot_efficient_frontier(mean_returns, cov_matrix, optimal_weights, risk_free
     plt.legend()
     plt.grid(True, alpha=0.3)
 
+
+    filename = 'results/efficient_frontier.png'
     plt.tight_layout()
-    plt.savefig('efficient_frontier.png')
-    print("Chart saved as 'efficient_frontier.png'")
+    plt.savefig(filename)
+    print(f"Chart saved as '{filename}'")
+    
     plt.show()
