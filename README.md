@@ -62,16 +62,40 @@ To run tests:
 python -m unittest discover tests
 ```
 
+## 🛡️ Risk Management (Monte Carlo Simulation)
+
+After optimizing the portfolio weights, I implemented a **Monte Carlo Simulation** to stress-test the strategy and quantify potential risks.
+
+### ⚙️ How it Works
+* **Method:** Geometric Brownian Motion (GBM).
+* **Simulation:** Runs **10,000** parallel market scenarios over a **2-year** horizon (504 trading days).
+* **Math:** Uses the portfolio's historical volatility and drift (Daily Returns / 252) to generate random price paths using the Euler-Maruyama method.
+* **Metric:** Calculates the **95% Value at Risk (VaR)** to determine the worst-case downside.
+
+### 📊 Results & Visualization
+The engine visualizes the range of possible future outcomes to understand volatility behavior.
+
+**1. Projected Portfolio Paths (The "Spaghetti Plot")**
+*Visualizes the randomness of 50 different future market scenarios.*
+![Monte Carlo Paths](results/monte_carlo_simulation.png)
+
+**2. Distribution of Final Values (Value at Risk)**
+*A histogram of all 10,000 final outcomes. The red dashed line represents the 95% confidence interval (VaR).*
+![VaR Distribution](results/final_value_distribution.png)
+
 ## 📂 Project Structure
 ```text
 portfolio-optimization-engine/
 ├── src/
 │   ├── data_loader.py      
-│   ├── portfolio_optimizer.py 
+│   ├── portfolio_optimizer.py
+│   ├── riskmanager.py 
 │   └── visualizer.py     
 ├── tests/
 │   └── test_optimizer.py   
 ├── results/
+│   ├── monte_carlo_simulation.png
+│   ├── final_value_distribution.png
 │   └── efficient_frontier.png
 ├── main.py                  
 ├── requirements.txt         
@@ -90,7 +114,6 @@ Subject to:
 Where:
 1. $R_f$ is the Risk-Free Rate (proxied by 10-Year Treasury Yield).
 2. $\sigma_p = \sqrt{w^T \Sigma w}$ is the Portfolio Volatility.
-
 
 
 ## ⚠️ Disclaimer

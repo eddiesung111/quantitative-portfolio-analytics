@@ -3,6 +3,7 @@ import numpy as np
 from src.data_loader import get_stock_data
 from src.portfolio_optimizer import optimize_portfolio
 from src.visualizer import plot_efficient_frontier
+from src.risk_manager import monte_carlo_simulation, plot_simulation
 
 TICKERS = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'TSLA', 'NVDA']
 START_DATE = '2020-01-01'
@@ -33,6 +34,8 @@ def main():
     plot_efficient_frontier(mean_returns, cov_matrix, optimal_weights, RISK_FREE_RATE)
     print("\n--- Process Complete ---")
 
+    paths, final_values = monte_carlo_simulation(mean_returns, cov_matrix, result.x)
+    plot_simulation(paths, final_values, initial_investment=10000)
 
 if __name__ == "__main__":
     main()
