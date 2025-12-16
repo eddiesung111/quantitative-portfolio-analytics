@@ -1,24 +1,26 @@
-# Quantitative Portfolio Optimization Engine 
+# Quantitative Portfolio Optimization Engine
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Tests](https://img.shields.io/badge/Tests-Pytest-yellow)
 
 ## 📌 Overview
-This project is a **Mean-Variance Portfolio Optimizer** that uses Modern Portfolio Theory (MPT) to construct an optimal asset allocation strategy. 
+This project is a comprehensive quantitative finance toolkit that combines **Portfolio Optimization**, **Risk Management**, and **Derivatives Pricing**.
 
-It fetches historical market data, calculates the annualized covariance matrix, and employs the **SLSQP (Sequential Least Squares Programming)** algorithm to maximize the **Sharpe Ratio**. Additionally, it runs a **Monte Carlo Simulation** (10,000 iterations) to visualize the Efficient Frontier and the feasible set of portfolios.
+It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, employs **Monte Carlo Simulations** to quantify tail risk (VaR), and implements the **Black-Scholes Model** to generate 3D volatility surfaces for option valuation.
 
 ## 🚀 Key Features
-* **Automated Data Pipeline:** Fetches Adjusted Close prices dynamically using `yfinance`.
-* **Mathematical Optimization:** Uses `scipy.optimize` to minimize Negative Sharpe Ratio subject to constraints ($\sum w_i = 1$) and bounds ($0 \le w_i \le 1$).
-* **Risk Modeling:** Calculates Annualized Volatility and Covariance Matrix ($\Sigma$) to quantify inter-asset correlation.
-* **Visualization:** Generates an Efficient Frontier scatter plot mapping Risk ($\sigma$) vs. Expected Return ($E[r]$).
+* **Portfolio Optimization:** Uses `scipy.optimize` (SLSQP) to maximize the **Sharpe Ratio** subject to constraints ($\sum w_i = 1$) and long-only bounds.
+* **Risk Management:** Runs a **10,000-iteration Monte Carlo Simulation** using Geometric Brownian Motion (GBM) to calculate the **95% Value at Risk (VaR)**.
+* **Derivatives Pricing:** Implements the Black-Scholes formula to price European Options and generates a **3D Volatility Surface** to visualize the relationship between Spot Price, Volatility, and Option Value.
+* **Automated Data:** Fetches Adjusted Close prices dynamically using `yfinance`.
 
 ## 🛠️ Tech Stack
 * **Python 3**: Core Logic
-* **NumPy / Pandas**: Vectorized calculations and Time-series manipulation.
-* **SciPy**: Constrained non-linear optimization (SLSQP).
-* **Matplotlib**: Data visualization.
+* **NumPy / Pandas**: Vectorized calculations and time-series manipulation.
+* **SciPy**: Constrained non-linear optimization (SLSQP) and statistical functions.
+* **Matplotlib / Seaborn**: 2D Data visualization (Histograms, Scatter Plots).
+* **Pytest**: Unit testing framework.
 
 ## ⚙️ Installation
 1. Clone the repository:
@@ -36,13 +38,27 @@ It fetches historical market data, calculates the annualized covariance matrix, 
    pip install -r requirements.txt
    ```
 
-## 📊 Usage
-Run the main orchestrator:
+## 🛡️ Module 1: Portfolio Optimization & Risk
+This module fetches historical data, optimizes asset allocation for the Sharpe Ratio, and runs a Monte Carlo simulation to stress-test the portfolio.
+### 💻 How to Run
 ```bash
 python main.py
 ```
+### 📊 Methodology & Results
 
-## Sample Output
+#### Optimization (Efficient Frontier)
+
+The project solves the following optimization problem:
+   
+$$\text{Maximize  } S_p = \frac{E[R_p] - R_f}{\sigma_p}$$
+     
+Subject to:
+
+   - Unity Constraint: $\sum_{i=1}^{N} w_i = 1$
+
+   - Long-Only Constraint: $0 \leq w_i \leq 1$
+
+Sample Output:
 ```text
 OPTIMAL PORTFOLIO ALLOCATION (Max Sharpe: 1.32)
 ------------------------------------------------
@@ -51,70 +67,66 @@ NVDA : 26.01%
 GOOG : 5.01%
 ```
 
-## 📈 Results
-After running the engine, the Efficient Frontier chart is saved to the `results/` folder.
-Figure 1: Monte Carlo Simulation (n=10,000) showing the Efficient Frontier and Optimal Portfolio (Red Star).
+- Efficient Frontier Visualization: Maps the risk-return profile of random portfolios vs. the optimal allocation.
+![Efficient Frontier](results/efficient_frontier.png)
 
-## 🧪 Testing
-The project includes comprehensive unit tests to ensure the mathematical solver adheres to constraints (e.g., weights summing to 1.0).
-To run tests:
-```bash
-python -m unittest discover tests
-```
-
-## 🛡️ Risk Management (Monte Carlo Simulation)
-
-After optimizing the portfolio weights, I implemented a **Monte Carlo Simulation** to stress-test the strategy and quantify potential risks.
-
-### ⚙️ How it Works
-* **Method:** Geometric Brownian Motion (GBM).
-* **Simulation:** Runs **10,000** parallel market scenarios over a **2-year** horizon (504 trading days).
-* **Math:** Uses the portfolio's historical volatility and drift (Daily Returns / 252) to generate random price paths using the Euler-Maruyama method.
-* **Metric:** Calculates the **95% Value at Risk (VaR)** to determine the worst-case downside.
-
-### 📊 Results & Visualization
-The engine visualizes the range of possible future outcomes to understand volatility behavior.
-
-**1. Projected Portfolio Paths (The "Spaghetti Plot")**
-*Visualizes the randomness of 50 different future market scenarios.*
+#### Monte Carlo Simulation (Projected Paths)
+Uses Geometric Brownian Motion (GBM) with Cholesky Decomposition to model correlated asset paths over a 2-year horizon (10,000 iterations).
 ![Monte Carlo Paths](results/monte_carlo_simulation.png)
 
-**2. Distribution of Final Values (Value at Risk)**
-*A histogram of all 10,000 final outcomes. The red dashed line represents the 95% confidence interval (VaR).*
+#### Risk Analysis (Value at Risk)
+A histogram of final portfolio values showing the 95% VaR threshold (the red dashed line).
 ![VaR Distribution](results/final_value_distribution.png)
+
+## 📉 Module 2: Derivatives Pricing
+This module focuses on individual options pricing using the Black-Scholes-Merton model, visualizing how option premiums react to market variables.
+
+### 💻 How to Run
+```bash
+python src/options_pricer.py
+```
+Opens an interactive 3D plot window.
+
+### ⚙️ 📊 Methodology & Results
+
+#### The Math
+Prices European Call/Put options based on Stock Price ($S$), Strike ($K$), Time ($T$), Risk-free Rate ($r$), and Volatility.
+
+1. Call Option Volatility Surface
+Visualizes the relationship between Underlying Price, Volatility, and Call Price. Note how higher volatility increases the option value (Vega).
+![Call Surface](results/black_scholes_call_surface.png)
+
+2. Put Option Volatility Surface
+Visualizes the Put Price surface. Note the inverse relationship with stock price compared to the Call option.
+![Put Surface](results/black_scholes_put_surface.png)
+
+## 🧪 Testing
+The project uses `pytest` to ensure mathematical accuracy (e.g., weights summing to 1.0, Put-Call Parity).
+To run the full test suite:
+```bash
+pytest
+```
 
 ## 📂 Project Structure
 ```text
 portfolio-optimization-engine/
 ├── src/
-│   ├── data_loader.py      
-│   ├── portfolio_optimizer.py
-│   ├── riskmanager.py 
-│   └── visualizer.py     
+│   ├── __init__.py           # Package marker
+│   ├── data_loader.py        # Yfinance fetcher
+│   ├── portfolio_optimizer.py# Mean-Variance Solver
+│   ├── risk_manager.py       # Monte Carlo Engine
+│   └── options_pricer.py     # Black-Scholes & 3D Plotting
 ├── tests/
-│   └── test_optimizer.py   
+│   ├── test_optimizer.py     # Optimizer tests
+│   └── test_pricer.py        # Black-Scholes tests
 ├── results/
 │   ├── monte_carlo_simulation.png
 │   ├── final_value_distribution.png
-│   └── efficient_frontier.png
-├── main.py                  
-├── requirements.txt         
-└── README.md              
+│   └── option_surface.png
+├── main.py                   # Orchestrator script
+├── requirements.txt          # Dependencies
+└── README.md                 # Project Documentation      
 ```
-
-## 📐 Mathematical Methodology
-The project solves the following optimization problem:
-
-$$\text{Maximize  }  S_p = \frac{E[R_p] - R_f}{\sigma_p}$$
-
-Subject to:
-1. Unity Constraint: $\sum_{i=1}^{N} w_i = 1$
-2. Long-Only Constraint: $0 \leq w_i \leq 1$
-
-Where:
-1. $R_f$ is the Risk-Free Rate (proxied by 10-Year Treasury Yield).
-2. $\sigma_p = \sqrt{w^T \Sigma w}$ is the Portfolio Volatility.
-
 
 ## ⚠️ Disclaimer
 This software is for educational purposes only. Past performance is not indicative of future results.
