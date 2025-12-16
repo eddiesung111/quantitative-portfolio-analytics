@@ -22,7 +22,7 @@ def main():
     optimal_weights = result.x
 
     print("\n----------------------------------------------------------------")
-    print(f"OPTIMAL PORTFOLIO ALLOCATION (Max Sharpe: {-result.fun:.2f})")
+    print(f"OPTIMAL PORTFOLIO ALLOCATION (Max Sharpe: {-result.fun:.2f})") # Our max Sharpe is stored as negative
     print("----------------------------------------------------------------")
 
     portfolio = sorted(zip(TICKERS, optimal_weights), key=lambda x: x[1], reverse=True)
@@ -30,7 +30,7 @@ def main():
     for ticker, weight in portfolio:
         if weight > 0.0001:
             print(f"{ticker:<5}: {weight*100:.2f}%")
-
+    
     plot_efficient_frontier(mean_returns, cov_matrix, optimal_weights, RISK_FREE_RATE)
     print("\n--- Process Complete ---")
 

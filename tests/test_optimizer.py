@@ -1,47 +1,54 @@
-import unittest
+import pytest
 import numpy as np
 from src.portfolio_optimizer import optimize_portfolio
-class TestPortfolioOptimizer(unittest.TestCase):
+
+# --- Fixture (Replaces 'setUp') ---
+@pytest.fixture
+def optimizer_data():
+    """
+    Creates the dummy data for use in all tests.
+    Returns a tuple: (mean_returns, cov_matrix, risk_free_rate)
+    """
+    mean_returns = np.array([0.1, 0.2, 0.15])
+    cov_matrix = np.array([
+        [0.1, 0.0, 0.0],
+        [0.0, 0.1, 0.0],
+        [0.0, 0.0, 0.1]
+    ])
+    risk_free_rate = 0.04
     
-    def setUp(self):
-        """
-        Set up a dummy scenario for testing.
-        We create 3 fake assets with simple returns.
-        """
-        self.mean_returns = np.array([0.1, 0.2, 0.15])
-        self.cov_matrix = np.array([
-            [0.1, 0.0, 0.0],
-            [0.0, 0.1, 0.0],
-            [0.0, 0.0, 0.1]
-        ])
-        
-        self.risk_free_rate = 0.04
+    return mean_returns, cov_matrix, risk_free_rate
 
-    def test_weights_sum_to_one(self):
-        """
-        Test if the optimized weights sum to exactly 1.0
-        """
-        result = optimize_portfolio(self.mean_returns, self.cov_matrix, self.risk_free_rate)
-        weights = result.x
-        self.assertAlmostEqual(np.sum(weights), 1.0, places=5)
+# ---------------------------------
+#           UNIT TESTS
+# ---------------------------------
 
+def test_weights_sum_to_one(optimizer_data):
+    """
+    Test if the optimized weights sum to exactly 1.0
+    """
+    means, cov, rf = optimizer_data
+    result = optimize_portfolio(means, cov, rf)
+    weights = result.x
 
-    def test_no_short_selling(self):
-        """
-        Test if all weights are non-negative (>= 0)
-        """
-        result = optimize_portfolio(self.mean_returns, self.cov_matrix, self.risk_free_rate)
-        weights = result.x
-        self.assertTrue(np.all(weights >= -1e-4))
+    assert np.sum(weights) == pytest.approx(1.0)
 
+def test_no_short_selling(optimizer_data):
+    """
+    Test if all weights are non-negative (>= 0)
+    """
+    means, cov, rf = optimizer_data
+    
+    result = optimize_portfolio(means, cov, rf)
+    weights = result.x
 
-    def test_optimization_success(self):
-        """
-        Check if the solver actually reports 'Success'
-        """
-        result = optimize_portfolio(self.mean_returns, self.cov_matrix, self.risk_free_rate)
-        self.assertTrue(result.success)
+    assert np.all(weights >= -1e-4)
 
+def test_optimization_success(optimizer_data):
+    """
+    Check if the solver actually reports 'Success'
+    """
+    means, cov, rf = optimizer_data
+    result = optimize_portfolio(means, cov, rf)
 
-if __name__ == '__main__':
-    unittest.main()
+    assert result.success

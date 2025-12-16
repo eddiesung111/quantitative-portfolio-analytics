@@ -19,22 +19,23 @@ def plot_efficient_frontier(mean_returns, cov_matrix, optimal_weights, risk_free
         results[2, i] = p_sharpe
 
     # --- 3. PLOTTING ---
+    # Efficient frontier sketched by the Monte Carlo simulation
     plt.figure(figsize = (10, 6))
     plt.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='.', alpha=0.5)
     plt.colorbar(label='Sharpe Ratio')
 
+    # Highlight the optimal portfolio, with our target function (Sharpe Ratio)
     opt_ret, opt_vol, opt_sharpe = calculate_portfolio_performance(optimal_weights, mean_returns, cov_matrix, risk_free_rate)
     plt.scatter(opt_vol, opt_ret, c= 'red', s = 200, marker = 'x', label = f'Optimal (Sharpe: {opt_sharpe:.2f})')
 
     plt.title('Efficient Frontier: Monte Carlo Simulation')
-    plt.xlabel('Volatility (Annual Standard Deviation)')
+    plt.xlabel('Volatility')
     plt.ylabel('Expected Annual Return')
     plt.legend()
     plt.grid(True, alpha=0.3)
-
+    plt.tight_layout()
 
     filename = 'results/efficient_frontier.png'
-    plt.tight_layout()
     plt.savefig(filename)
     print(f"Chart saved as '{filename}'")
     
