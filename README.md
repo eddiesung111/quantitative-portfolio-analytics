@@ -9,25 +9,25 @@ This project is a comprehensive quantitative finance toolkit that combines **Por
 
 It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, employs **Monte Carlo Simulations** to quantify tail risk (VaR), and implements the **Black-Scholes Model** to generate 3D volatility surfaces for option valuation.
 
-## 🚀 Key Features
-* **Portfolio Optimization:** Uses `scipy.optimize` (SLSQP) to maximize the **Sharpe Ratio** subject to constraints ($\sum w_i = 1$) and long-only bounds.
-* **Risk Management:** Runs a **10,000-iteration Monte Carlo Simulation** using Geometric Brownian Motion (GBM) to calculate the **95% Value at Risk (VaR)**.
-* **Derivatives Pricing:** Implements the Black-Scholes formula to price European Options and generates a **3D Volatility Surface** to visualize the relationship between Spot Price, Volatility, and Option Value.
-* **Automated Data:** Fetches Adjusted Close prices dynamically using `yfinance`.
+## 🚀 Live Demo
+**[Click here to view the Interactive Dashboard](https://portfolio-optimization-engine-pxhjpfyv8tj5jxinbn9qr3.streamlit.app/)**
+
+## ⚡ Quick Overview
+* **Portfolio Optimization & Risk:** Optimizes portfolio weights to maximize the Sharpe Ratio.
+* **Risk Management:** Simulates 1,000+ market scenarios to calculate Value at Risk (VaR).
+* **Options Pricing:** Prices European options and visualizes the Volatility Surface.
 
 ## 🛠️ Tech Stack
-* **Python 3**: Core Logic
-* **NumPy / Pandas**: Vectorized calculations and time-series manipulation.
-* **SciPy**: Constrained non-linear optimization (SLSQP) and statistical functions.
-* **Matplotlib / Seaborn**: 2D Data visualization (Histograms, Scatter Plots).
-* **Pytest**: Unit testing framework.
+* **Core Logic:** `Python`, `NumPy`, `Pandas`, `SciPy`
+* **Visualization:** `Plotly` (Interactive Charts), `Matplotlib`
+* **Dashboard:** `Streamlit`
+* **Testing:** `Pytest`
 
-## ⚙️ Installation
+## 💻 Installation
 1. Clone the repository:
    ```bash
    git clone [https://github.com/eddiesung111/portfolio-optimizer.git](https://github.com/eddiesung111/portfolio-optimizer.git)
    ```
-   
 2. Create a virtual environment:
    ```bash
    python3 -m venv .venv
@@ -39,7 +39,7 @@ It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, em
    ```
 
 ## 🛡️ Module 1: Portfolio Optimization & Risk
-This module fetches historical data, optimizes asset allocation for the Sharpe Ratio, and runs a Monte Carlo simulation to stress-test the portfolio.
+**Goal:** Construct the "Efficient Frontier" portfolio that offers the highest expected return for a given level of risk.
 ### 💻 How to Run
 ```bash
 python main.py
@@ -58,7 +58,7 @@ Subject to:
 
    - Long-Only Constraint: $0 \leq w_i \leq 1$
 
-Sample Output:
+#### Sample Output:
 ```text
 OPTIMAL PORTFOLIO ALLOCATION (Max Sharpe: 1.32)
 ------------------------------------------------
@@ -67,7 +67,26 @@ NVDA : 26.01%
 GOOG : 5.01%
 ```
 
-- Efficient Frontier Visualization: Maps the risk-return profile of random portfolios vs. the optimal allocation.
+## 🛡️ Module 2: Risk Management (Monte Carlo)
+Goal: Stress-test the optimized portfolio against thousands of potential future market paths using Geometric Brownian Motion (GBM).
+
+### 💻 How to Run
+```bash
+python src/risk_manager.py
+```
+
+### 📊 Methodology & Results
+We simulate stock price paths using the stochastic differential equation:
+
+$$ dS_t = \mu S_t dt + \sigma S_t dW_t $$
+
+- $S_t$: Asset Price
+- $\mu$: Expected Return (Drift)
+- $\sigma$: Volatility
+- $dW_t$: Wiener Process (Random Walk)
+
+#### Efficient Frontier Visualization
+Maps the risk-return profile of random portfolios vs. the optimal allocation.
 ![Efficient Frontier](results/efficient_frontier.png)
 
 #### Monte Carlo Simulation (Projected Paths)
@@ -78,8 +97,9 @@ Uses Geometric Brownian Motion (GBM) with Cholesky Decomposition to model correl
 A histogram of final portfolio values showing the 95% VaR threshold (the red dashed line).
 ![VaR Distribution](results/final_value_distribution.png)
 
-## 📉 Module 2: Derivatives Pricing
-This module focuses on individual options pricing using the Black-Scholes-Merton model, visualizing how option premiums react to market variables.
+
+## 📉 Module 3: Derivatives Pricing
+Goal: Calculate theoretical prices for European Call/Put options and visualize market sensitivity (Greeks).
 
 ### 💻 How to Run
 ```bash
@@ -89,16 +109,27 @@ Opens an interactive 3D plot window.
 
 ### ⚙️ 📊 Methodology & Results
 
-#### The Math
-Prices European Call/Put options based on Stock Price ($S$), Strike ($K$), Time ($T$), Risk-free Rate ($r$), and Volatility.
+Implements the closed-form Black-Scholes Model:
+
+$$ C = S_0 N(d_1) - K e^{-rT} N(d_2) $$
+
+Where $N(\cdot)$ is the cumulative distribution function of the standard normal distribution. 
+
+This module also generates a 3D Volatility Surface to visualize how option prices react to changes in underlying price and volatility.
 
 1. Call Option Volatility Surface
-Visualizes the relationship between Underlying Price, Volatility, and Call Price. Note how higher volatility increases the option value (Vega).
+Visualizes the relationship between Underlying Price, Volatility, and Call Price.
 ![Call Surface](results/black_scholes_call_surface.png)
 
 2. Put Option Volatility Surface
 Visualizes the Put Price surface. Note the inverse relationship with stock price compared to the Call option.
 ![Put Surface](results/black_scholes_put_surface.png)
+
+## 🚀 The Dashboard
+All three modules are integrated into a single interactive web application.
+```bash
+streamlit run dashboard.py
+```
 
 ## 🧪 Testing
 The project uses `pytest` to ensure mathematical accuracy (e.g., weights summing to 1.0, Put-Call Parity).
@@ -124,6 +155,7 @@ portfolio-optimization-engine/
 │   ├── final_value_distribution.png
 │   └── option_surface.png
 ├── main.py                   # Orchestrator script
+├── dashboard.py              # Main Streamlit Application
 ├── requirements.txt          # Dependencies
 └── README.md                 # Project Documentation      
 ```
