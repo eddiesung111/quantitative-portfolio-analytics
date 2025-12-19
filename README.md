@@ -26,7 +26,7 @@ It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, em
 ## 💻 Installation
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/eddiesung111/portfolio-optimizer.git](https://github.com/eddiesung111/portfolio-optimizer.git)
+   git clone https://github.com/eddiesung111/portfolio-optimizer-engine.git
    ```
 2. Create a virtual environment:
    ```bash
