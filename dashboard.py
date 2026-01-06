@@ -23,18 +23,23 @@ def get_data_cached(tickers, start, end):
 def optimize_cached(mean_rets, cov_mat, rate):
     return optimize_portfolio(mean_rets, cov_mat, rate)
 
+# --- Helper Functions ---
+def get_stressed_parameters(base_means, base_cov, tickers, scenario, custom_params):
+    pass
+
+
 # --- User Configuration ---
 st.sidebar.header("User Configuration")
-tickers_input = st.sidebar.text_input("Enter Tickers (comma separated)", "AAPL, MSFT, GOOG, AMZN, TSLA, NVDA")
+tickers_input = st.sidebar.text_input("Enter Tickers (comma separated)", "MSFT", "JPM", "JNJ", "KO", "XOM", "TLT")
 start_date = st.sidebar.date_input("Start Date", '2020-01-01')
-end_date = st.sidebar.date_input("End Date", datetime.now())
+end_date = st.sidebar.date_input("End Date", '2025-12-31')
 rf_rate = st.sidebar.number_input("Risk-Free Rate (Decimal)", value=0.04, step = 0.01)
 
 # Tickers in the Correct Format
 tickers = [t.strip().upper() for t in tickers_input.split(",")]
 
 # --- Main Tabs ---
-tab1, tab2, tab3 = st.tabs(["📈 Portfolio Optimizer", "🛡️ Risk Management", "📉 Options Pricer"])
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Portfolio Optimizer", "🛡️ Risk Management", "📉 Options Pricer"])
 
 # --- Tab 1 ---
 with tab1:
@@ -105,54 +110,99 @@ with tab1:
 # --- Tab 2 ---
 with tab2:
     st.header("Monte Carlo Simulation")
-    st.write("Simulates future portfolio performance using Geometric Brownian Motion (GBM).")
+    st.caption("Simulate portfolio performance under various market regimes using Geometric Brownian Motion.")
     if 'opt_done' not in st.session_state or not st.session_state['opt_done']:
-        st.warning("⚠️ Please run the Portfolio Optimizer first.")
+        st.warning("⚠️ Please go to the 'Optimization' tab and generate a portfolio first.")
     else:
         # User Configuration
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 2])
         with col1:
-            sims = st.slider("Number of Simulations", 100, 5000, 2000, step=100)
-            initial_investment = st.number_input("Initial Investment Amount ($)", min_value=5000, value=10000, step=1000)
+            st.markdown("### ⚙️ Configuration")
+            scenario = st.selectbox(
+                "Select Market Scenario", 
+                options=["Normal Market", "2008 Crash", "Tech Bubble", "Custom Stress Test"]
+            )
+            
+            # --- CUSTOM MODE SLIDERS (Conditional) ---
+            custom_params = {}
+            if scenario == "Custom Stress Test":
+                st.info("🛠️ Custom Stress Parameters")
+                custom_params['vol_mult'] = st.slider("Volatility Multiplier", 1.0, 5.0, 1.5, 0.1)
+                custom_params['corr_force'] = st.slider("Force Correlation", 0.0, 1.0, 0.0, 0.1)
+                custom_params['drift'] = st.slider("Annual Drift Override", -0.5, 0.5, -0.1, 0.05)
+            
+            st.divider()
+            sims = st.slider("Number of Simulations", 1000, 50000, 5000, step=1000)
+            
         with col2:
-            days = st.slider("Time Horizon (Days)", 30, 500, 250, step = 10)
-        
-        if st.button("Run Simulation", type = 'primary'):
-            with st.spinner("Running Monte Carlo Simulations..."):
-                mean_returns = st.session_state['mean_returns']
-                cov_matrix = st.session_state['cov_matrix']
+            st.markdown("### 📊 Simulation Parameters")
+            c1, c2 = st.columns(2)
+            with c1:
+                initial_investment = st.number_input("Initial Investment ($)", value=10000, step=1000)
+                confidence_level = st.selectbox("VaR Confidence Level", [95, 99])
+            with c2:
+                days = st.slider("Time Horizon (Days)", 30, 365, 252)
+
+        # --- Run Simulation ---
+        if st.button("Run Simulation", type = 'primary', use_container_width=True):
+            with st.spinner(f"Simulating {scenario} conditions..."):
+                base_means = st.session_state['mean_returns']
+                base_cov = st.session_state['cov_matrix']
                 weights = st.session_state['weights']
 
+                str_means, str_cov = get_stressed_parameters(base_means, base_cov, tickers, scenario, custom_params)
+
                 price_paths, final_values = monte_carlo_simulation(
-                    mean_returns, cov_matrix, weights, initial_investment, days, sims)
+                    str_means, str_cov, weights, initial_investment, days, sims
+                )
                 
-                var_95 = np.percentile(final_values, 5)
-                st.subheader("Projected Portfolio Value Paths")
+                var_percentile = np.percentile(final_values, 100 - confidence_level)
+                var_loss = initial_investment - var_percentile
+
+        # --- Display Results ---
+                st.subheader("Projected Portfolio: {scenario}")
+                path_color = 'red' if "Crash" in scenario or "Bubble" in scenario else 'royalblue'
                 fig_paths = go.Figure()
                 
-                # Plot first 50 simulations
-                for i in range(50):
+                indices = np.random.choice(price_paths.shape[1], 100, replace=False)
+                for i in indices:
                     fig_paths.add_trace(go.Scatter(
                         y=price_paths[:, i],
                         mode='lines',
-                        opacity=0.3,
+                        line=dict(color=path_color, width=1),
+                        opacity=0.1,
                         showlegend=False
                     ))
-                fig_paths.update_layout(xaxis_title="Days", yaxis_title="Portfolio Value ($)")
+
+                mean_path = np.mean(price_paths, axis=1)
+                fig_paths.add_trace(go.Scatter(
+                    y = mean_path, 
+                    mode = 'lines'),
+                    name = 'Average Path',
+                    line = dict(color='black', width=3, dash = "dash")
+                )
+
+                fig_paths.update_layout(xaxis_title="Days", yaxis_title="Portfolio Value ($)", height = 400, margin = dict(l=0, r=0, t=30, b=0))
                 st.plotly_chart(fig_paths, use_container_width=True)
 
-                # Display VaR Analysis
-                st.subheader("Value at Risk (VaR) Analysis")
-                fig_hist = px.histogram(
-                    final_values, 
-                    nbins=50, 
-                    title="Distribution of Final Portfolio Values",
-                    labels={'value': 'Final Portfolio Value ($)'},
-                    color_discrete_sequence=['#636EFA']
-                )
-                fig_hist.add_vline(x=var_95, line_width=3, line_dash="dash", line_color="red")
-                st.plotly_chart(fig_hist, use_container_width=True)
-                st.metric("95% Value at Risk (VaR)", f"${var_95:,.2f}")
+                c_res1, c_res2 = st.columns([2, 1])
+                with c_res1:
+                    st.subheader("Final Value Distribution")
+                    fig_hist = px.histogram(
+                        x=final_values, nbins=50, 
+                        color_discrete_sequence=[path_color], opacity=0.7
+                    )
+                    fig_hist.add_vline(x=var_percentile, line_width=3, line_dash="dash", line_color="orange")
+                    fig_hist.add_annotation(x=var_percentile, y=10, text=f"VaR {confidence_level}%", showarrow=True, arrowhead=1)
+                    fig_hist.update_layout(xaxis_title="Final Portfolio Value ($)", yaxis_title="Frequency", height=300)
+                    st.plotly_chart(fig_hist, use_container_width=True)
+                    
+                with c_res2:
+                    st.markdown("### Risk Metrics")
+                    st.metric(label=f"Value at Risk ({confidence_level}%)", value=f"${initial_investment - var_percentile:,.2f}", delta_color="inverse")
+                    st.metric(label="Worst Case (Min)", value=f"${np.min(final_values):,.2f}")
+                    st.metric(label="Success Rate (> Initial)", value=f"{np.mean(final_values > initial_investment)*100:.1f}%")
+
 
 # --- Tab 3 ---
 with tab3:
