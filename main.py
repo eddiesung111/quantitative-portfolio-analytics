@@ -5,9 +5,9 @@ from src.portfolio_optimizer import optimize_portfolio
 from src.visualizer import plot_efficient_frontier
 from src.risk_manager import monte_carlo_simulation, plot_simulation
 
-TICKERS = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'TSLA', 'NVDA']
+TICKERS = ['MSFT', 'JPM', 'JNJ', 'KO', 'XOM', "TLT"]
 START_DATE = '2020-01-01'
-END_DATE = datetime.datetime.today().strftime('%Y-%m-%d')
+END_DATE = '2025-12-31'
 RISK_FREE_RATE = 0.044
 
 def main():
