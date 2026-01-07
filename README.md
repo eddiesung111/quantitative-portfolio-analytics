@@ -10,7 +10,7 @@ This project is a comprehensive quantitative finance toolkit that combines **Por
 It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, employs **Monte Carlo Simulations** to quantify tail risk (VaR), and implements the **Black-Scholes Model** to generate 3D volatility surfaces for option valuation.
 
 ## 🚀 Live Demo
-**[Click here to view the Interactive Dashboard](https://portfolio-optimization-engine-pxhjpfyv8tj5jxinbn9qr3.streamlit.app/)**
+**[Click here to view the Interactive Dashboard](https://quantitative-portfolio-analytics-ryaumd8phphzv7pzdjg5cg.streamlit.app/)**
 
 ## ⚡ Quick Overview
 * **Portfolio Optimization & Risk:** Optimizes portfolio weights to maximize the Sharpe Ratio.
