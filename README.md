@@ -13,9 +13,9 @@ It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, em
 **[Click here to view the Interactive Dashboard](https://quantitative-portfolio-analytics-ryaumd8phphzv7pzdjg5cg.streamlit.app/)**
 
 ## ⚡ Quick Overview
-* **Portfolio Optimization & Risk:** Optimizes portfolio weights to maximize the Sharpe Ratio.
-* **Risk Management:** Simulates 1,000+ market scenarios to calculate Value at Risk (VaR).
-* **Options Pricing:** Prices European options and visualizes the Volatility Surface.
+* **Allocators (Optimization)**: Constructs the "ideal" portfolio using Modern Portfolio Theory (MPT) and Efficient Frontier analysis.
+* **Risk Engine (Simulation)**: Stress-tests the portfolio against historical crashes (e.g., 2008 Financial Crisis) and custom shock scenarios using Modified Geometric Brownian Motion.
+* **Derivatives (Hedging)**: Calculates option prices (Black-Scholes) and Greeks to design hedging strategies for the equity positions.
 
 ## 🛠️ Tech Stack
 * **Core Logic:** `Python`, `NumPy`, `Pandas`, `SciPy`
@@ -70,27 +70,27 @@ GOOG : 5.01%
 ## 🛡️ Module 2: Risk Management (Monte Carlo)
 Goal: Stress-test the optimized portfolio against thousands of potential future market paths using Geometric Brownian Motion (GBM).
 
-### 💻 How to Run
-```bash
-python src/risk_manager.py
-```
-
 ### 📊 Methodology & Results
-We simulate stock price paths using the stochastic differential equation:
+1. **Stochastic Process**: We model stock price paths ($S_t$) using Geometric Brownian Motion (GBM):
 
 $$ dS_t = \mu S_t dt + \sigma S_t dW_t $$
 
-- $S_t$: Asset Price
 - $\mu$: Expected Return (Drift)
 - $\sigma$: Volatility
 - $dW_t$: Wiener Process (Random Walk)
+
+2. **Stress Testing (Regime Switching):** Unlike standard VaR models that assume normal conditions, this engine allows for Parameter Tampering to simulate market crashes.
+- Covariance Decomposition: The covariance matrix $\Sigma$ is decomposed into Volatility ($D$) and Correlation ($R$) matrices ($\Sigma = D \cdot R \cdot D$).
+- Shock Injection:
+-- 2008 Crash Scenario: Volatility is tripled ($\sigma \times 3$) and correlations are forced to 0.9 (Systemic Failure).
+-- Tech Bubble: Sector-specific shocks are applied to Tech tickers, decoupling them from the broader market.
 
 #### Efficient Frontier Visualization
 Maps the risk-return profile of random portfolios vs. the optimal allocation.
 ![Efficient Frontier](results/efficient_frontier.png)
 
 #### Monte Carlo Simulation (Projected Paths)
-Uses Geometric Brownian Motion (GBM) with Cholesky Decomposition to model correlated asset paths over a 2-year horizon (10,000 iterations).
+Uses Geometric Brownian Motion (GBM) to model correlated asset paths over a 2-year horizon (10,000 iterations).
 ![Monte Carlo Paths](results/monte_carlo_simulation.png)
 
 #### Risk Analysis (Value at Risk)
