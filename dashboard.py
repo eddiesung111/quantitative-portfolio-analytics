@@ -24,13 +24,61 @@ def optimize_cached(mean_rets, cov_mat, rate):
     return optimize_portfolio(mean_rets, cov_mat, rate)
 
 # --- Helper Functions ---
-def get_stressed_parameters(base_means, base_cov, tickers, scenario, custom_params):
-    pass
+def get_stressed_parameters(mean_returns, cov_matrix, tickers, scenario, custom_params):
+    
+    stds = np.sqrt(np.diag(cov_matrix))
+    outer_stds = np.outer(stds, stds)
+    corr_matrix = cov_matrix / outer_stds
+    
+    new_stds = stds.copy()
+    new_corr = corr_matrix.copy()
+    new_means = mean_returns.copy()
+    
+    if scenario == "Normal Market":
+        return mean_returns, cov_matrix
+    elif scenario == "2008 Crash":
+        # Volatility explodes (3x), Correlation tightens (0.9), Market tanks (-30% ann)
+        new_stds *= 3.0 
+        new_corr[:] = 0.9
+        np.fill_diagonal(new_corr.values, 1.0)
+        new_means[:] = -0.30 / 252
+        
+    elif scenario == "Tech Bubble":
+        tech_tickers = ['AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX']
+        
+        for i, ticker in enumerate(tickers):
+            if ticker in tech_tickers:
+                new_stds[i] *= 4.0 
+                new_means[i] = -0.50 / 252
+            else:
+                new_stds[i] *= 1.2 
+                new_means[i] = -0.05 / 25
+                
+        new_corr[:] = 0.5
+        np.fill_diagonal(new_corr.values, 1.0)
+
+    elif scenario == "Custom Stress Test" and custom_params:
+        # Apply User Sliders
+        new_stds *= custom_params['vol_mult']
+        
+        # Apply Correlation Force (only if user sets it > 0)
+        if custom_params['corr_force'] > 0:
+            new_corr[:] = custom_params['corr_force']
+            np.fill_diagonal(new_corr.values, 1.0)
+            
+        # Apply Market Drift
+        new_means[:] = custom_params['drift'] / 252
+
+    # 3. Reconstruct Covariance Matrix
+    stressed_cov = new_corr * np.outer(new_stds, new_stds)
+    
+    return new_means, stressed_cov
 
 
 # --- User Configuration ---
 st.sidebar.header("User Configuration")
-tickers_input = st.sidebar.text_input("Enter Tickers (comma separated)", "MSFT", "JPM", "JNJ", "KO", "XOM", "TLT")
+default_tickers = "MSFT, JPM, JNJ, KO, XOM, TLT"
+tickers_input = st.sidebar.text_input("Enter Tickers (comma separated)", value=default_tickers)
 start_date = st.sidebar.date_input("Start Date", '2020-01-01')
 end_date = st.sidebar.date_input("End Date", '2025-12-31')
 rf_rate = st.sidebar.number_input("Risk-Free Rate (Decimal)", value=0.04, step = 0.01)
@@ -39,7 +87,7 @@ rf_rate = st.sidebar.number_input("Risk-Free Rate (Decimal)", value=0.04, step =
 tickers = [t.strip().upper() for t in tickers_input.split(",")]
 
 # --- Main Tabs ---
-tab1, tab2, tab3, tab4 = st.tabs(["📈 Portfolio Optimizer", "🛡️ Risk Management", "📉 Options Pricer"])
+tab1, tab2, tab3 = st.tabs(["📈 Portfolio Optimizer", "🛡️ Risk Management", "📉 Options Pricer"])
 
 # --- Tab 1 ---
 with tab1:
@@ -131,8 +179,6 @@ with tab2:
                 custom_params['corr_force'] = st.slider("Force Correlation", 0.0, 1.0, 0.0, 0.1)
                 custom_params['drift'] = st.slider("Annual Drift Override", -0.5, 0.5, -0.1, 0.05)
             
-            st.divider()
-            sims = st.slider("Number of Simulations", 1000, 50000, 5000, step=1000)
             
         with col2:
             st.markdown("### 📊 Simulation Parameters")
@@ -142,6 +188,7 @@ with tab2:
                 confidence_level = st.selectbox("VaR Confidence Level", [95, 99])
             with c2:
                 days = st.slider("Time Horizon (Days)", 30, 365, 252)
+                sims = st.slider("Number of Simulations", 1000, 50000, 5000, step=1000)
 
         # --- Run Simulation ---
         if st.button("Run Simulation", type = 'primary', use_container_width=True):
@@ -160,7 +207,7 @@ with tab2:
                 var_loss = initial_investment - var_percentile
 
         # --- Display Results ---
-                st.subheader("Projected Portfolio: {scenario}")
+                st.subheader(f"Projected Portfolio: {scenario}")
                 path_color = 'red' if "Crash" in scenario or "Bubble" in scenario else 'royalblue'
                 fig_paths = go.Figure()
                 
@@ -177,10 +224,10 @@ with tab2:
                 mean_path = np.mean(price_paths, axis=1)
                 fig_paths.add_trace(go.Scatter(
                     y = mean_path, 
-                    mode = 'lines'),
+                    mode = 'lines',
                     name = 'Average Path',
                     line = dict(color='black', width=3, dash = "dash")
-                )
+                ))
 
                 fig_paths.update_layout(xaxis_title="Days", yaxis_title="Portfolio Value ($)", height = 400, margin = dict(l=0, r=0, t=30, b=0))
                 st.plotly_chart(fig_paths, use_container_width=True)
@@ -193,15 +240,44 @@ with tab2:
                         color_discrete_sequence=[path_color], opacity=0.7
                     )
                     fig_hist.add_vline(x=var_percentile, line_width=3, line_dash="dash", line_color="orange")
-                    fig_hist.add_annotation(x=var_percentile, y=10, text=f"VaR {confidence_level}%", showarrow=True, arrowhead=1)
-                    fig_hist.update_layout(xaxis_title="Final Portfolio Value ($)", yaxis_title="Frequency", height=300)
+                    fig_hist.add_annotation(
+                        x=var_percentile,
+                        y=0,                  # Anchor to the bottom of the grid
+                        yref="paper",         # Use relative coordinates (0 to 1)
+                        yshift=-25,           # Shift DOWN by 25 pixels (below the axis numbers)
+                        text=f"<b>${var_percentile:,.0f}</b>", # The Price (Bold)
+                        showarrow=False,
+                        font=dict(color="red", size=12)
+                    )
+                    fig_hist.update_layout(
+                        xaxis_title="Final Portfolio Value ($)", 
+                        yaxis_title="Frequency", 
+                        height=300,
+                        margin=dict(l=0, r=0, t=30, b=0)
+                    )
                     st.plotly_chart(fig_hist, use_container_width=True)
                     
                 with c_res2:
                     st.markdown("### Risk Metrics")
-                    st.metric(label=f"Value at Risk ({confidence_level}%)", value=f"${initial_investment - var_percentile:,.2f}", delta_color="inverse")
-                    st.metric(label="Worst Case (Min)", value=f"${np.min(final_values):,.2f}")
-                    st.metric(label="Success Rate (> Initial)", value=f"{np.mean(final_values > initial_investment)*100:.1f}%")
+                    median_val = np.median(final_values)
+                    median_return = (median_val - initial_investment) / initial_investment * 100
+                    
+                    st.metric(
+                        label="Average Performance (Median)", 
+                        value=f"${median_val:,.2f}", 
+                        delta=f"{median_return:.1f}% Return"
+                    )
+
+                    st.metric(
+                        label=f"{confidence_level}% VaR", 
+                        value=f"${var_percentile:,.2f}",
+                        help="In the worst 5% of cases, your portfolio value will fall below this number."
+                    )
+
+                    st.metric(
+                        label="Success Rate (> Initial)", 
+                        value=f"{np.mean(final_values > initial_investment)*100:.1f}%"
+                    )
 
 
 # --- Tab 3 ---
