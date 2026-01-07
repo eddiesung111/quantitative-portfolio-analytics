@@ -296,21 +296,41 @@ with tab3:
         st.subheader("Risk Parameters")
         volatility = st.slider("Volatility (σ)", min_value=0.01, max_value=1.0, value=0.2, step=0.01)
         rf_rate_opt = st.number_input("Risk-Free Rate (Decimal)", value=0.04, step=0.001, key="rf_opt")
+        shares_to_hedge = st.number_input("Number of Shares to Hedge", min_value=1, value=100, step=10)
+        
     st.divider()
 
     # Calculate Option Prices
     call_price = black_scholes(current_price, strike_price, time_to_expiry, rf_rate_opt, volatility, 'call')
     put_price = black_scholes(current_price, strike_price, time_to_expiry, rf_rate_opt, volatility, 'put')
 
+
     # Display Results
-    m1, m2, m3 = st.columns(3)
+    m1, m2, m3, m4 = st.columns(4)
     m1.metric("CALL Option Price", f"${call_price:.2f}", delta=None)
     m2.metric("PUT Option Price", f"${put_price:.2f}", delta=None)
-    with m3:
+    m3.metric(
+            label="Cost of Protective Call Hedge",
+            value=f"${call_price * shares_to_hedge:,.2f}",
+            delta=f"{(call_price * shares_to_hedge / (shares_to_hedge * current_price)) * 100:.2f}% of Position Value",
+            delta_color="inverse",
+            help="This is the premium you pay to buy Call options. If the stock rise above the Strike Price, your losses are capped."
+        )   
+    m4.metric(
+            label="Cost of Protective Put Hedge",
+            value=f"${put_price * shares_to_hedge:,.2f}",
+            delta=f"{(put_price * shares_to_hedge / (shares_to_hedge * current_price)) * 100:.2f}% of Position Value",
+            delta_color="inverse",
+            help="This is the premium you pay to buy Put options. If the stock drops below the Strike Price, your losses are capped."
+        )   
+        
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("Interactive Volatility Surface")
+        st.write(f"Visualizing how Put/Call Option Price changes with Stock Price and Volatility.")
+    with c2:
         choice = st.selectbox("Select Option Type for Sensitivity Analysis", options=['call', 'put'])
-
-    st.subheader("Interactive Volatility Surface")
-    st.write(f"Visualizing how **{choice} Option Price** changes with Stock Price and Volatility.")
 
     with st.spinner("Generating 3D Surface..."):
         spot_range = np.linspace(current_price * 0.5, current_price * 1.5, 20)
