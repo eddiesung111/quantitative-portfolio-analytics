@@ -7,15 +7,12 @@
 ## 📌 Overview
 This project is a comprehensive quantitative finance toolkit that combines **Portfolio Optimization**, **Risk Management**, and **Derivatives Pricing**.
 
-It uses Modern Portfolio Theory (MPT) to construct optimal asset allocations, employs **Monte Carlo Simulations** to quantify tail risk (VaR), and implements the **Black-Scholes Model** to generate 3D volatility surfaces for option valuation.
-
-## 🚀 Live Demo
-**[Click here to view the Interactive Dashboard](https://quantitative-portfolio-analytics-ryaumd8phphzv7pzdjg5cg.streamlit.app/)**
-
-## ⚡ Quick Overview
 * **Allocators (Optimization)**: Constructs the "ideal" portfolio using Modern Portfolio Theory (MPT) and Efficient Frontier analysis.
 * **Risk Engine (Simulation)**: Stress-tests the portfolio against historical crashes (e.g., 2008 Financial Crisis) and custom shock scenarios using Modified Geometric Brownian Motion.
 * **Derivatives (Hedging)**: Calculates option prices (Black-Scholes) and Greeks to design hedging strategies for the equity positions.
+
+## 🚀 Live Demo
+**[Click here to view the Interactive Dashboard](https://quantitative-portfolio-analytics-ryaumd8phphzv7pzdjg5cg.streamlit.app/)**
 
 ## 🛠️ Tech Stack
 * **Core Logic:** `Python`, `NumPy`, `Pandas`, `SciPy`
